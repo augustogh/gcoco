@@ -1,0 +1,26 @@
+# Configuration for Network Monitor & HIDS/IPS
+
+# Maximum allowed upload bytes before triggering [EXFILTRATION] alert
+# (Applies to processes NOT in the binary whitelist)
+max_upload_bytes: 10485760  # 10 MB
+
+# Binary whitelist (executables that are allowed to exceed exfiltration limits)
+binary_whitelist:
+  - "/usr/sbin/sshd"
+  - "/usr/bin/ssh"
+  - "/usr/lib/systemd/systemd"
+  - "/usr/bin/curl"
+  - "/usr/bin/wget"
+  - "/usr/bin/git"
+  - "/usr/bin/apt-get"
+  - "/usr/bin/dpkg"
+
+# Allowed ports to listen on (in LISTEN state). Any other ports trigger [BACKDOOR]
+allowed_listening_ports:
+  - 22
+  - 80
+  - 443
+  - 8080
+
+# VirusTotal API Key for checking remote IPs
+vt_api_key: ""
