@@ -1,7 +1,7 @@
 import logging
 import ipaddress
 import aiohttp
-from typing import Optional, Dict
+from typing import Optional, Dict, Tuple
 from cachetools import TTLCache
 
 # Configure logger for threat intel
@@ -10,6 +10,9 @@ logger = logging.getLogger("threat_intel")
 # In-memory cache for IP verification results
 # Cache up to 1024 IPs for 1 hour (3600 seconds)
 ip_cache = TTLCache(maxsize=1024, ttl=3600)
+
+# Geolocation cache in memory (IP to Lat, Lon tuple)
+geo_cache: Dict[str, Tuple[float, float]] = {}
 
 def is_public_ip(ip_str: str) -> bool:
     """Checks if an IP address is a valid public IP."""
@@ -77,3 +80,53 @@ async def query_virustotal_ip(ip: str, api_key: str) -> Optional[bool]:
     except Exception as e:
         logger.error(f"Unexpected error querying VirusTotal for IP {ip}: {e}")
         return None
+
+async def get_ip_geolocation(ip: str) -> Optional[Tuple[float, float]]:
+    """
+    Asynchronously queries ip-api.com for the latitude and longitude of a public IP.
+    Results are cached in geo_cache.
+    """
+    if not is_public_ip(ip):
+        return None
+
+    if ip in geo_cache:
+        return geo_cache[ip]
+
+    url = f"http://ip-api.com/json/{ip}"
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, timeout=5) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("status") == "success":
+                        lat = data.get("lat")
+                        lon = data.get("lon")
+                        if lat is not None and lon is not None:
+                            geo_cache[ip] = (float(lat), float(lon))
+                            logger.info(f"Geolocated IP {ip} at ({lat}, {lon})")
+                            return geo_cache[ip]
+                    logger.debug(f"ip-api query status failed for IP {ip}: {data}")
+    except Exception as e:
+        logger.debug(f"Error querying geolocation for IP {ip}: {e}")
+    return None
+
+async def get_own_geolocation() -> Optional[Tuple[float, float]]:
+    """
+    Asynchronously queries ip-api.com to find the latitude and longitude of the current host.
+    """
+    url = "http://ip-api.com/json/"
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, timeout=5) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("status") == "success":
+                        lat = data.get("lat")
+                        lon = data.get("lon")
+                        if lat is not None and lon is not None:
+                            logger.info(f"Geolocated origin host at ({lat}, {lon})")
+                            return (float(lat), float(lon))
+    except Exception as e:
+        logger.debug(f"Error querying own geolocation: {e}")
+    return None
+
