@@ -2,10 +2,7 @@
 import os
 import sys
 import datetime
-<<<<<<< HEAD
-=======
 import json
->>>>>>> e59a7d4 (feat: implement threat intelligence integration and ASCII world map visualization for monitoring network traffic)
 from typing import Dict, List, Set, Tuple, Any, Optional
 
 from rich.text import Text
@@ -19,12 +16,8 @@ from textual.binding import Binding
 from textual.message import Message
 
 from engine import NetworkEngine
-<<<<<<< HEAD
-from threat_intel import query_virustotal_ip, is_public_ip
-=======
 from threat_intel import query_virustotal_ip, is_public_ip, get_ip_geolocation, get_own_geolocation
 from ui_map import WorldMapWidget, MapScreen
->>>>>>> e59a7d4 (feat: implement threat intelligence integration and ASCII world map visualization for monitoring network traffic)
 
 # --- Custom Textual Messages ---
 class NetworkScanResult(Message):
@@ -41,8 +34,6 @@ class VirusTotalResult(Message):
         self.ip = ip
         self.is_malicious = is_malicious
 
-<<<<<<< HEAD
-=======
 class GeolocationResult(Message):
     """Event sent when a public IP geolocation query completes."""
     def __init__(self, ip: str, coords: Optional[Tuple[float, float]]):
@@ -57,7 +48,6 @@ class OwnGeolocationResult(Message):
         self.coords = coords
 
 
->>>>>>> e59a7d4 (feat: implement threat intelligence integration and ASCII world map visualization for monitoring network traffic)
 # --- Design Configuration ---
 COLORS = [
     "#00FF66",  # Neon Green
@@ -193,8 +183,6 @@ class NetTraceApp(App):
         color: #a0aec0;
         border-top: double #2e3440;
     }
-<<<<<<< HEAD
-=======
 
     /* --- Fullscreen Map Screen --- */
     #fullscreen-map-container {
@@ -211,7 +199,6 @@ class NetTraceApp(App):
         content-align: center middle;
         color: #3b4252;
     }
->>>>>>> e59a7d4 (feat: implement threat intelligence integration and ASCII world map visualization for monitoring network traffic)
     """
     
     BINDINGS = [
@@ -219,10 +206,7 @@ class NetTraceApp(App):
         Binding("r", "manual_scan", "Force Scan", show=True),
         Binding("f", "toggle_expand", "Expand/Collapse", show=True),
         Binding("k", "kill_selected", "Kill Selected PID", show=True),
-<<<<<<< HEAD
-=======
         Binding("m", "toggle_map", "View Map", show=True),
->>>>>>> e59a7d4 (feat: implement threat intelligence integration and ASCII world map visualization for monitoring network traffic)
         Binding("q", "quit", "Quit", show=True),
     ]
 
@@ -251,16 +235,12 @@ class NetTraceApp(App):
         self.vt_api_key = self.engine.config.get("vt_api_key", "")
         self.malicious_ips: Set[str] = set()
         self.vt_pending: Set[str] = set()
-<<<<<<< HEAD
-        
-=======
 
         # Geolocation state
         self.geo_data: Dict[str, Tuple[float, float]] = {}   # ip -> (lat, lon)
         self.origin_coords: Optional[Tuple[float, float]] = None
         self.geo_pending: Set[str] = set()  # IPs currently being geolocated
 
->>>>>>> e59a7d4 (feat: implement threat intelligence integration and ASCII world map visualization for monitoring network traffic)
         # Connection cache
         self.grouped_data: Dict[str, Dict[int, List[Dict[str, Any]]]] = {}
         self.proc_threats: Dict[str, Set[str]] = {}
@@ -276,12 +256,9 @@ class NetTraceApp(App):
         # 3. Refresh the alerts panel every 1.5s
         self.set_interval(1.5, self.update_alerts_panel)
 
-<<<<<<< HEAD
-=======
         # Kick off own-host geolocation query (fire-and-forget)
         self.fetch_own_geolocation()
 
->>>>>>> e59a7d4 (feat: implement threat intelligence integration and ASCII world map visualization for monitoring network traffic)
         # Trigger initial scan & draw
         self.trigger_network_scan()
         self.update_sidebar()
@@ -311,24 +288,11 @@ class NetTraceApp(App):
         self.update_sidebar()
 
     def trigger_vt_checks(self) -> None:
-<<<<<<< HEAD
-        """Spawns VirusTotal queries for any unverified public IP addresses."""
-        if not self.vt_api_key:
-            return
-        
-=======
         """Spawns VirusTotal AND geolocation queries for any unverified public IPs."""
->>>>>>> e59a7d4 (feat: implement threat intelligence integration and ASCII world map visualization for monitoring network traffic)
         for proc_key, ports_dict in self.grouped_data.items():
             for port, conns in ports_dict.items():
                 for conn in conns:
                     ip = conn.get("remote_ip", "")
-<<<<<<< HEAD
-                    if is_public_ip(ip) and ip not in self.malicious_ips and ip not in self.vt_pending:
-                        self.vt_pending.add(ip)
-                        self.query_vt_ip(ip, proc_key)
-
-=======
                     if not is_public_ip(ip):
                         continue
 
@@ -342,7 +306,6 @@ class NetTraceApp(App):
                         self.geo_pending.add(ip)
                         self.fetch_ip_geolocation(ip)
 
->>>>>>> e59a7d4 (feat: implement threat intelligence integration and ASCII world map visualization for monitoring network traffic)
     @work(exclusive=False)
     async def query_vt_ip(self, ip: str, proc_key: str) -> None:
         """Asynchronous API caller worker for VirusTotal lookup."""
@@ -350,8 +313,6 @@ class NetTraceApp(App):
         if is_malicious is not None:
             self.post_message(VirusTotalResult(ip, is_malicious))
 
-<<<<<<< HEAD
-=======
     @work(exclusive=False)
     async def fetch_own_geolocation(self) -> None:
         """Fire-and-forget worker that geolocates the host's own public IP."""
@@ -372,7 +333,6 @@ class NetTraceApp(App):
             # Silent failure — no marker drawn for this IP
             self.geo_pending.discard(ip)
 
->>>>>>> e59a7d4 (feat: implement threat intelligence integration and ASCII world map visualization for monitoring network traffic)
     def on_virus_total_result(self, event: VirusTotalResult) -> None:
         """Applies VirusTotal results when async HTTP lookup resolves."""
         ip = event.ip
@@ -402,8 +362,6 @@ class NetTraceApp(App):
             self.update_tree()
             self.update_alerts_panel()
 
-<<<<<<< HEAD
-=======
     def on_own_geolocation_result(self, event: OwnGeolocationResult) -> None:
         """Stores the host's own coordinates when the geolocation query resolves."""
         if event.coords:
@@ -432,7 +390,6 @@ class NetTraceApp(App):
             except Exception:
                 pass
 
->>>>>>> e59a7d4 (feat: implement threat intelligence integration and ASCII world map visualization for monitoring network traffic)
     # --- UI Rendering & Node Threat Bubbling ---
     def update_sidebar(self) -> None:
         """Updates the sidebar statistics, legends, and config settings."""
@@ -497,11 +454,8 @@ class NetTraceApp(App):
         sidebar_text.append("Expand/Collapse Tree\n", "dim")
         sidebar_text.append(" [k] ", "bold #FFFF00")
         sidebar_text.append("Kill Selected Process\n", "dim")
-<<<<<<< HEAD
-=======
         sidebar_text.append(" [m] ", "bold #FFFF00")
         sidebar_text.append("Open Geo Map\n", "dim")
->>>>>>> e59a7d4 (feat: implement threat intelligence integration and ASCII world map visualization for monitoring network traffic)
         sidebar_text.append(" [q] ", "bold #FFFF00")
         sidebar_text.append("Quit Application\n", "dim")
 
@@ -892,15 +846,12 @@ class NetTraceApp(App):
             )
 
 
-<<<<<<< HEAD
-=======
     def action_toggle_map(self) -> None:
         """Opens the fullscreen interactive geo-map screen (press 'm' or 'Escape' to return)."""
         from ui_map import MapScreen
         self.push_screen(MapScreen())
 
 
->>>>>>> e59a7d4 (feat: implement threat intelligence integration and ASCII world map visualization for monitoring network traffic)
 if __name__ == "__main__":
     if os.getuid() != 0:
         print("[WARNING] Running without ROOT privileges.", file=sys.stderr)
